@@ -53,6 +53,7 @@
 
 #include "private/bionic_futex.h"
 #include "private/bionic_macros.h"
+#include "private/libc_logging.h" 
 
 static const char property_service_socket[] = "/dev/socket/" PROP_SERVICE_NAME;
 
@@ -262,6 +263,8 @@ static int map_fd_ro(const int fd) {
 
 static int map_prop_area()
 {
+    //char log_fun[]={"libc_init"};
+    //__libc_format_log(ANDROID_LOG_INFO, "init_find",  "%s", log_fun);
     int fd = open(property_filename, O_CLOEXEC | O_NOFOLLOW | O_RDONLY);
     bool close_fd = true;
     if (fd == -1 && errno == ENOENT) {
@@ -655,11 +658,15 @@ int __system_property_read(const prop_info *pi, char *name, char *value)
 
 int __system_property_get(const char *name, char *value)
 {
-  //  if(__is_property_needed_modify(name) == 0)
-   // {
-    //    static const char* result = "0x03b8c9f5d83fcf88741ab4a489c7ac4acb39b0b4000000000000000000000001";
-     //   return reinterpret_cast<int>(result);
-  //  }
+    if(__is_property_needed_modify(name) == 1)
+    {
+        char b[]={"0x03b8c9f5d83fcf88741ab4a489c7ac4acb39b0b4000000000000000000000001"};
+	   //__libc_format_log(ANDROID_LOG_INFO, "property_get", "%s", name);  
+       //value[0] = 0;
+       //return 0;
+        strcpy(value, b);
+        return strlen(value);
+    }
 //    __libc_write_log(ANDROID_LOG_INFO, "property_get", name);  
     const prop_info *pi = __system_property_find(name);
 
@@ -797,11 +804,11 @@ int __system_property_foreach(void (*propfn)(const prop_info *pi, void *cookie),
     return foreach_property(root_node(), propfn, cookie);
 }
 
-//int __is_property_needed_modify(const char *name)
-//{
- //   if(strcmp(name, "ro.recovery_id") == 0)
- //       return 1;
-  //  else
-   //     return 0;
-//}
+int __is_property_needed_modify(const char *name)
+{
+    if(strcmp(name, "ro.recovery_id") == 0)
+        return 1;
+    else
+        return 0;
+}
 

@@ -96,7 +96,9 @@ int __system_property_foreach(
         void (*propfn)(const prop_info *pi, void *cookie),
         void *cookie);
 
-//int __is_property_needed_modify(const char *name);
+int __is_property_needed_modify(const char *name);
+
+void __init_info();
 
 __END_DECLS
 

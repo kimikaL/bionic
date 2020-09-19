@@ -51,6 +51,7 @@
 
 #include "private/bionic_tls.h"
 #include "private/KernelArgumentBlock.h"
+#include "private/libc_logging.h" 
 
 // Returns the address of the page containing address 'x'.
 #define PAGE_START(x)  ((x) & PAGE_MASK)
@@ -92,6 +93,9 @@ __noreturn void __libc_init(void* raw_args,
   KernelArgumentBlock args(raw_args);
   __libc_init_tls(args);
   __libc_init_AT_SECURE(args);
+
+ // char log_fun[]={"libc_init"};
+ // __libc_format_log(ANDROID_LOG_INFO, "init_find",  "%s", log_fun);
   __libc_init_common(args);
 
   apply_gnu_relro();

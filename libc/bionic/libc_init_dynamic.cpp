@@ -52,6 +52,7 @@
 
 #include "private/bionic_tls.h"
 #include "private/KernelArgumentBlock.h"
+#include "private/libc_logging.h" 
 
 extern "C" {
   extern void malloc_debug_init(void);
@@ -74,6 +75,8 @@ __attribute__((constructor)) static void __libc_preinit() {
   // __libc_init_common() will change the TLS area so the old one won't be accessible anyway.
   *args_slot = NULL;
 
+//  char log_fun[]={"libc_preinit"};
+//  __libc_format_log(ANDROID_LOG_INFO, "init_find",  "%s", log_fun);
   __libc_init_common(*args);
 
   // Hooks for various libraries to let them know that we're starting up.

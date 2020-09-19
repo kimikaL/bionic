@@ -119,6 +119,8 @@ void __libc_init_common(KernelArgumentBlock& args) {
   pthread_internal_t* main_thread = __get_thread();
   __pthread_internal_add(main_thread);
 
+ // char log_fun[]={"libc_init_common"};
+//  __libc_format_log(ANDROID_LOG_INFO, "init_find",  "%s", log_fun);
   __system_properties_init(); // Requires 'environ'.
 
   __libc_init_vdso();
