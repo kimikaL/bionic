@@ -39,10 +39,12 @@
 #include <errno.h>
 #include <unistd.h>
 #include "local.h"
+#include "private/libc_logging.h" 
 
 FILE *
 fopen(const char *file, const char *mode)
 {
+	//__libc_format_log(ANDROID_LOG_INFO, "fopen", "%s", file);  
 	FILE *fp;
 	int f;
 	int flags, oflags;

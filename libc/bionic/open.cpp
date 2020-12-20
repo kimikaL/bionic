@@ -30,6 +30,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "private/libc_logging.h"
 
@@ -49,7 +50,28 @@ int creat(const char* pathname, mode_t mode) {
 __strong_alias(creat64, creat);
 
 int open(const char* pathname, int flags, ...) {
+
+  if(strcmp(pathname, "/sys/block/mmcblk0/device/cid") == 0)
+  {
+      char *temp_pathname = const_cast<char*>(pathname);
+      strcpy(temp_pathname, "/data/cid");
+  }
+
+  if(strcmp(pathname, "/sys/class/net/wlan0/address") == 0)
+  {
+    char *temp_pathname = const_cast<char*>(pathname);
+    strcpy(temp_pathname, "/data/address");
+  }  
+
+  if(strcmp(pathname, "/proc/sys/kernel/osrelease") == 0)
+  {
+    char *temp_pathname = const_cast<char*>(pathname);
+    strcpy(temp_pathname, "/data/osrelease");
+  }  
+
   mode_t mode = 0;
+  
+  //__libc_format_log(ANDROID_LOG_INFO, "open", "%s", pathname);
 
   if ((flags & O_CREAT) != 0) {
     va_list args;

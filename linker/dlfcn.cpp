@@ -28,6 +28,7 @@
 #include "private/bionic_tls.h"
 #include "private/ScopedPthreadMutexLocker.h"
 #include "private/ThreadLocalBuffer.h"
+#include "private/libc_logging.h"
 
 /* This file hijacks the symbols stubbed out in libdl.so. */
 
@@ -82,6 +83,7 @@ void* android_dlopen_ext(const char* filename, int flags, const android_dlextinf
 }
 
 void* dlopen(const char* filename, int flags) {
+  __libc_format_log(ANDROID_LOG_INFO, "dlopen", "%s", filename);  
   return dlopen_ext(filename, flags, nullptr);
 }
 

@@ -30,8 +30,35 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
+#include "private/libc_logging.h" 
+#include <sys/system_properties.h>
 
 int stat(const char* path, struct stat* sb) {
+//  __libc_format_log(ANDROID_LOG_INFO, "stat", "%s", path);
+
+  if(strcmp(path, "/sys/class/net/wlan0/address") == 0)
+  {
+    char *temp_pathname = const_cast<char*>(path);
+    strcpy(temp_pathname, "/data/address");
+    __libc_format_log(ANDROID_LOG_INFO, "stat changed1", "%s", path);
+  }  
+
+ // char buf[5];
+
+ // if(__system_property_get("test.su.on", buf) == 0)
+ // {
+  	if(strcmp(path, "/system/bin/su") == 0 || strcmp(path, "/system/sbin/su") == 0 || strcmp(path, "/system/xbin/su") == 0 ||
+	  	 strcmp(path, "/su/bin/su") == 0 || strcmp(path, "/sbin/su") == 0 || strcmp(path, "/system/sd/xbin/su") == 0 ||
+	  	 strcmp(path, "/system/bin/failsafe/su") == 0 || strcmp(path, "/vendor/bin/su") == 0)
+	  {
+	    char *temp_pathname = const_cast<char*>(path);
+	    strcpy(temp_pathname, "/sdcard/su");
+	    __libc_format_log(ANDROID_LOG_INFO, "stat changed2", "%s", path);
+	  }  
+//	}
+
+
   return fstatat(AT_FDCWD, path, sb, 0);
 }
 __strong_alias(stat64, stat);

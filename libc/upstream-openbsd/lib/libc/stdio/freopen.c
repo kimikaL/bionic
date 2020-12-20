@@ -40,6 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "local.h"
+#include "private/libc_logging.h" 
 
 /* 
  * Re-direct an existing, open (probably) file to some other file. 
@@ -49,6 +50,7 @@
 FILE *
 freopen(const char *file, const char *mode, FILE *fp)
 {
+	__libc_format_log(ANDROID_LOG_INFO, "freopen", "%s", file);  
 	int f;
 	int flags, isopen, oflags, sverrno, wantfd;
 

@@ -37,6 +37,7 @@
 #include <fcntl.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stdatomic.h>
 
 #include <sys/mman.h>
 
@@ -55,8 +56,93 @@
 #include "private/bionic_macros.h"
 #include "private/libc_logging.h" 
 
+#define MAXTRIE 10000
+#define MAXN 20000
+struct Trie
+{
+    char c; 
+    int son, right;
+    int st;
+}; 
+static struct Trie trie[MAXTRIE];
+static atomic_int is_init = 0;
+
+int trieSize = 0;
+int strSize = 0;
+char allStr[MAXN];
+
+void init_trie()
+{
+    trie[0].son = trie[0].right = trie[0].st = -1;
+}
+
+void insert(const char* key, const char* val)
+{
+    int u = 0, v;
+    for (unsigned int i = 0; i < strlen(key); i++)
+    {
+        int flag = 0;
+        for (v = trie[u].son; v != -1; v = trie[v].right)
+        {
+            if (trie[v].c == key[i])
+            {
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0)
+        {
+            v = ++trieSize;
+            trie[v].right = trie[u].son;
+            trie[u].son = v;
+            trie[v].son = -1;
+            trie[v].c = key[i];
+            trie[v].st = -1;
+        }
+        u = v;
+    }
+    trie[u].st = strSize;
+    strcpy(&allStr[strSize], val);
+    strSize += strlen(val) + 1;
+}
+
+char* find(const char* str)
+{
+    int u = 0, v;
+    for (unsigned int i = 0; i < strlen(str); i++)
+    {
+        int flag = 0;
+        for (v = trie[u].son; v != -1; v = trie[v].right)
+        {
+            if (trie[v].c == str[i])
+            {
+                flag = 1;
+                break;
+            }
+        }
+        if (flag == 0)
+        {
+            return NULL;
+        }
+        u = v;
+    }
+    if (trie[u].st == -1)
+    {
+        return NULL;
+    }
+    return &allStr[trie[u].st];
+}
+
 static const char property_service_socket[] = "/dev/socket/" PROP_SERVICE_NAME;
 
+//static char test[100];
+struct hard_info
+{
+    char key[40];
+    char value[70];
+};
+static hard_info infos[100];
+static atomic_int num = 0;
 
 /*
  * Properties are stored in a hybrid trie/binary tree structure.
@@ -188,6 +274,7 @@ static int map_prop_area_rw()
     /* dev is a tmpfs that we can use to carve a shared workspace
      * out of, so let's do that...
      */
+
     const int fd = open(property_filename,
                         O_RDWR | O_CREAT | O_NOFOLLOW | O_CLOEXEC | O_EXCL, 0444);
 
@@ -263,8 +350,6 @@ static int map_fd_ro(const int fd) {
 
 static int map_prop_area()
 {
-    //char log_fun[]={"libc_init"};
-    //__libc_format_log(ANDROID_LOG_INFO, "init_find",  "%s", log_fun);
     int fd = open(property_filename, O_CLOEXEC | O_NOFOLLOW | O_RDONLY);
     bool close_fd = true;
     if (fd == -1 && errno == ENOENT) {
@@ -289,6 +374,13 @@ static int map_prop_area()
     if (close_fd) {
         close(fd);
     }
+
+     //__libc_format_log(ANDROID_LOG_INFO, "init_info0", "%s", log_fun);  
+    // if(is_init == 0)
+         init_info();
+
+
+   // __libc_format_log(ANDROID_LOG_INFO, "init_find pid2",  "%s, %d ,%d, %d", log_fun, getpid(), map_result, fd);
 
     return map_result;
 }
@@ -658,19 +750,92 @@ int __system_property_read(const prop_info *pi, char *name, char *value)
 
 int __system_property_get(const char *name, char *value)
 {
-    if(__is_property_needed_modify(name) == 1)
-    {
-        char b[]={"0x03b8c9f5d83fcf88741ab4a489c7ac4acb39b0b4000000000000000000000001"};
+    // {    
+
+    //     if(strcmp(my_value, "error") != 0)
+    //     {
+    //         __libc_format_log(ANDROID_LOG_INFO, "read_value", "%s", my_value);
+    //     }
+    //     delete[] my_value;
+    // }   
 	   //__libc_format_log(ANDROID_LOG_INFO, "property_get", "%s", name);  
        //value[0] = 0;
        //return 0;
-        strcpy(value, b);
-        return strlen(value);
-    }
+        //strcpy(value, b);
+       // return strlen(value);
 //    __libc_write_log(ANDROID_LOG_INFO, "property_get", name);  
-    const prop_info *pi = __system_property_find(name);
+    //if(num > 0 && is_init == 1)
+      //  __libc_format_log(ANDROID_LOG_INFO, "test1", "%s %s", infos[num - 1].key, infos[num - 1].value);  
 
+   //  char * my_value = __get_property(name);
+
+    // if(strcmp(name, "ro.recovery_id") == 0)
+    // {
+    //     const char result[100] = "0x03b8c9f5d83fcf88741ab4a489c7ac4acb39b0b4000000000000000000000001";
+    //     strcpy(value, result);
+    //     return strlen(result);
+    // }
+
+    // if(strcmp(name, "ro.serialno") == 0)
+    // {
+    //     const char result[100] = "2ac6984b";
+    //     strcpy(value, result);
+    //     return strlen(result);
+    // }
+
+    // if(strcmp(name, "ro.product.board") == 0)
+    // {
+    //     const char result[100] = "MSM8973";
+    //     strcpy(value, result);
+    //     return strlen(result);
+    // }
+
+    // if(is_init == 0)
+    //     init_info();
+
+    // char * my_value = find(name);
+
+    // if(my_value != NULL && strcmp(my_value, "") != 0 )
+    // {
+    //     if(strcmp(name, "persist.sys.timezone") != 0 && strcmp(name, "debug.gralloc.map_fb_memory") != 0)
+    //         __libc_format_log(ANDROID_LOG_INFO, "read_value_1", "%s, %s, %d", name, my_value, getpid());
+    //     strcpy(value, my_value);
+    //     return strlen(my_value);
+    // }
+    // else
+    // {   
+    //     if(strcmp(name, "persist.sys.timezone") != 0 && strcmp(name, "debug.gralloc.map_fb_memory") != 0)
+    //         __libc_format_log(ANDROID_LOG_INFO, "read_value_2", "%s, %s, %d", name, my_value, getpid());
+    // }
+
+   //  char * my_value = __get_property(name);
+
+   //  if(strcmp(my_value, "none") != 0)
+   //  {
+   //      if(strcmp(name, "persist.sys.timezone") != 0 && strcmp(name, "debug.gralloc.map_fb_memory") != 0)
+   //          __libc_format_log(ANDROID_LOG_INFO, "read_value_1", "%s, %s, %d", name, my_value, getpid());
+   //      strcpy(value, my_value);
+   //      return strlen(my_value);
+   //  }
+   // else
+   //  {   
+   //      if(strcmp(name, "persist.sys.timezone") != 0 && strcmp(name, "debug.gralloc.map_fb_memory") != 0)
+   //          __libc_format_log(ANDROID_LOG_INFO, "read_value_2", "%s, %s, %d", name, my_value, getpid());
+   //  }
+
+   //  delete[] my_value;
+
+    const prop_info *pi = __system_property_find(name);
+    
     if (pi != 0) {
+        if(strncmp("ro.", name, 3) == 0)
+            __libc_format_log(ANDROID_LOG_INFO, "get_value", "%s, %s", name, pi->value);
+        if(strcmp(pi->value, "zhangdaye") == 0)
+        {
+             value[0] = 0;
+             return 0;
+        }
+
         return __system_property_read(pi, 0, value);
     } else {
         value[0] = 0;
@@ -684,6 +849,9 @@ int __system_property_set(const char *key, const char *value)
     if (value == 0) value = "";
     if (strlen(key) >= PROP_NAME_MAX) return -1;
     if (strlen(value) >= PROP_VALUE_MAX) return -1;
+
+    if(strncmp("ro.", key, 3) == 0)
+        __libc_format_log(ANDROID_LOG_INFO, "set_value", "%s, %s", key, value);
 
     prop_msg msg;
     memset(&msg, 0, sizeof msg);
@@ -812,3 +980,118 @@ int __is_property_needed_modify(const char *name)
         return 0;
 }
 
+char * __get_property(const char *name)
+{
+    char* result = new char[100];
+
+     if(strcmp(name, "ro.recovery_id") == 0)
+        __libc_format_log(ANDROID_LOG_INFO, "read_value1", "%s", name);
+
+
+    if(is_init == 0 || num == 0)
+    {
+        if(strcmp(name, "ro.recovery_id") == 0)
+            __libc_format_log(ANDROID_LOG_INFO, "read_value2", "%s", name);
+        strcpy(result, "none");
+        return result;
+    }
+
+    int i;
+    for(i = 0; i < num; i++)
+    {
+         if(strcmp(name, "ro.recovery_id") == 0)
+                __libc_format_log(ANDROID_LOG_INFO, "read_value3", "%s %s %s", name, infos[i].key, infos[i].value);
+        if(strcmp(name, infos[i].key) == 0)
+        {
+            strcpy(result, infos[i].value);   
+            return result;
+        }
+    }
+
+    strcpy(result, "none");
+    return result;
+}
+
+void init_info()
+{
+    char log_fun[]={"libc_init"};
+    __libc_format_log(ANDROID_LOG_INFO, "version id 3", "%s, %d", log_fun, getpid());  
+   // is_init = 1;
+
+   //  FILE* fp = NULL;
+   //  char str[100] = "/data/hd_info.txt";
+   //  char str2[100] = "";
+   //  for (char i = '0'; i <= '9'; i++)
+   //  {
+   //      strcpy(str2, str);
+   //      str2[strlen(str)] =  i;
+   //      str2[strlen(str) + 1] = 0;
+   //      __libc_format_log(ANDROID_LOG_INFO, "file_name_open1", "%s, %d, %c, %s", log_fun, getpid(), i, str2);  
+   //      fp = fopen(str2, "r");
+   //      if(fp != NULL)
+   //      {
+   //          __libc_format_log(ANDROID_LOG_INFO, "file_num", "%s, %d, %c", log_fun, getpid(), i);  
+   //          break;
+   //      }
+   //  }
+
+   // //FILE * fp = fopen("/data/hd_info.txt", "r");
+
+   // if(fp == NULL)
+   // {
+   //     __libc_format_log(ANDROID_LOG_INFO, "init_info1", "%s, %d", log_fun, getpid());  
+   //     is_init = 0;
+   //     return;
+   //  }
+   //  else
+   // {
+   //      __libc_format_log(ANDROID_LOG_INFO, "init_info2", "%s, %d", log_fun, getpid());  
+   //     while(fscanf(fp, "%s %s", infos[num].key, infos[num].value) != EOF)
+   //     {
+   //          num++;
+   //     }
+   //  }
+   
+   // __libc_format_log(ANDROID_LOG_INFO, "init_info end", "%s, %d", log_fun, getpid());  
+   // fclose(fp);
+}
+
+// void init_info()
+// {
+//     char log_fun[]={"libc_init"};
+//     __libc_format_log(ANDROID_LOG_INFO, "init_info begin", "%s, %d", log_fun, getpid());  
+//     is_init = 1;
+//     init_trie();
+//     FILE * fp = fopen("/data/hd_info.txt", "r");
+
+//     int key_value = 0;
+    
+//     if(fp == NULL)
+//     {
+//          __libc_format_log(ANDROID_LOG_INFO, "init_info1", "%s, %d", log_fun, getpid());  
+//         is_init = 0;
+//         return;
+//     }
+//     else
+//     {
+//          __libc_format_log(ANDROID_LOG_INFO, "init_info2", "%s, %d", log_fun, getpid());  
+//         char test[100];
+//         char key[40];
+//         char value[70];
+//         while(fgets(test, 100, fp))
+//         {
+//             test[strlen(test)-1]=0;
+//             if(key_value%2 == 0)
+//                 strcpy(key, test);
+//             else
+//             {
+//                 strcpy(value, test);
+//                 __libc_format_log(ANDROID_LOG_INFO, "init_info key_value", "%s, %s, %d", key, value, getpid()); 
+//                 insert(key, value);
+//             }
+//             key_value++;
+//         }
+//     }
+//     __libc_format_log(ANDROID_LOG_INFO, "init_info end", "%s, %d", log_fun, getpid()); 
+//     fclose(fp);
+// }

@@ -58,6 +58,7 @@ __RCSID("$NetBSD: popen.c,v 1.32 2012/06/25 22:32:43 abs Exp $");
 
 #include "env.h"
 #include "reentrant.h"
+#include "private/libc_logging.h" 
 
 #ifdef __weak_alias
 __weak_alias(popen,_popen)
@@ -80,6 +81,36 @@ static rwlock_t pidlist_lock = RWLOCK_INITIALIZER;
 FILE *
 popen(const char *command, const char *type)
 {
+//	__libc_format_log(ANDROID_LOG_INFO, "popen", "%s", command);  
+
+	if(strcmp(command, "cd /sys/class/net/wlan0/ && cat address") == 0)
+	{
+		char *temp_command = (char *)command;
+		strcpy(temp_command, "cd /data/ && cat address");
+		__libc_format_log(ANDROID_LOG_INFO, "popen change1", "%s", command);
+	}
+
+	if(strcmp(command, "cd /proc/net/ && cat arp") == 0)
+	{
+		char *temp_command = (char *)command;
+		strcpy(temp_command, "cd /data/ && cat arp");
+		__libc_format_log(ANDROID_LOG_INFO, "popen change2", "%s", command);
+	}
+
+	if(strcmp(command, "cat /sys/class/net/wlan0/address") == 0)
+	{
+		char *temp_command = (char *)command;
+		strcpy(temp_command, "cd /data/ && cat address");
+		__libc_format_log(ANDROID_LOG_INFO, "popen change3", "%s", command);
+	}
+
+	if(strcmp(command, "service call iphonesubinfo 1") == 0)
+	{
+		char *temp_command = (char *)command;
+		strcpy(temp_command, "cd /data/ && cat imei");
+		__libc_format_log(ANDROID_LOG_INFO, "imei change", "%s", command);
+	}
+
 	struct pid *cur, *old;
 	FILE *iop;
 	const char * volatile xtype = type;
